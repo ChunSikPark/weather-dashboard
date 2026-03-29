@@ -91,7 +91,7 @@ Charts show data only up to the current timestep (not the full dataset). As play
 - Template-based — no AI/API needed, fully deterministic
 - 4 personas: journalist, citizen, business (datacenters/manufacturers), legal/political
 - Frequency: 0 during normal, 1-2 moderate events, 3-4 critical events
-- Weather-aware: detects wind surges, drops, cloud changes, storms from weather data
+- Weather-aware: detects notable weather from weather data and generates tweets even during NORMAL grid conditions
 - Templates filled with real numbers from grid ops data ({freq}, {demand_gw}, {lmp}, etc.)
 - `buildVars(gridRow, weatherRow, iso)` is global — also used by `headlines.js`
 
@@ -138,7 +138,88 @@ Matches the Lattice site (tamu-twin.onrender.com):
 - **Labels:** Uppercase, bold, wide letter-spacing (micro-label style)
 - **Corners:** `0.125rem` (sharp, technical)
 
+## Layout Structure
+
+Three-column layout inside `.main`:
+```
+[ Map (35%) | Data Panels (flex) | Live Feed (280px) ]
+```
+
+Data Panels stack vertically: Grid Status -> Wind -> Solar.
+
+The playback bar sits at the bottom spanning full width.
+
+The ticker bar sits between the header and main content.
+
+### Script Loading Order (in index.html)
+
+Order matters — later scripts depend on earlier ones:
+```
+state.js      <- standalone, no dependencies
+gauge.js      <- standalone
+compass.js    <- standalone
+charts.js     <- standalone (uses Chart.js CDN)
+map.js        <- uses State from state.js
+playback.js   <- uses State from state.js
+tweets.js     <- uses State (buildVars is global, used by headlines.js)
+feed.js       <- standalone DOM manipulation
+headlines.js  <- uses buildVars() and fillTemplate() from tweets.js, uses State
+app.js        <- uses everything above, must be last
+```
+
+## Tweet Template Variables
+
+These variables are available in tweet templates via `{variable_name}` syntax. Built by `buildVars()` in `tweets.js`:
+
+| Variable | Source | Example |
+|----------|--------|---------|
+| `{region}` | Selected ISO name | `ERCOT` |
+| `{region_hashtag}` | ISO as hashtag | `#ERCOT` |
+| `{local_time}` | UTC converted to local | `3 PM Central` |
+| `{timeOfDay}` | morning/afternoon/evening/night | `afternoon` |
+| `{freq}` | frequency_hz | `59.35` |
+| `{demand_gw}` | demand_mw / 1000 | `71.2` |
+| `{wind_gw}` | wind_generation_mw / 1000 | `40.0` |
+| `{solar_gw}` | solar_generation_mw / 1000 | `14.7` |
+| `{thermal_gw}` | thermal_generation_mw / 1000 | `23.3` |
+| `{gen_gw}` | total_generation_mw / 1000 | `65.0` |
+| `{lmp}` | lmp_usd_per_mwh (formatted) | `5,000` |
+| `{neg_lmp}` | absolute LMP | `80` |
+| `{lmp_per_kwh}` | lmp / 1000 | `5.00` |
+| `{x_normal}` | lmp / 0.12 (vs retail) | `41667` |
+| `{reserve_mw}` | spinning_reserve_mw | `50` |
+| `{reserve_pct}` | reserve_margin_pct | `0.07` |
+| `{renewable_pct}` | renewable_penetration_pct | `115` |
+| `{interchange_gw}` | abs(net_interchange_mw) / 1000 | `12.0` |
+| `{gen_pct}` | (gen/demand) * 100 | `86` |
+| `{overgen_pct}` | ((gen-demand)/demand) * 100 | `8` |
+| `{deficit_gw}` | (demand-gen) / 1000 | `10.0` |
+| `{wind_mph}` | wind_speed_100m_mph from weather | `17` |
+| `{cloud_pct}` | cloud_cover_pct from weather | `53` |
+| `{ace}` | abs(ace_mw) (only in headlines.js) | `5,000` |
+
 ## Common Tasks
+
+### Adding new tweet templates for an existing condition
+1. Open `js/tweets.js`
+2. Find the condition key in `TEMPLATES` (e.g., `FREQ_EMERGENCY`)
+3. Add new template strings to the persona's array
+4. Use `{variable}` syntax — see Tweet Template Variables above
+5. Example:
+```js
+FREQ_EMERGENCY: {
+  citizen: [
+    // existing templates...
+    'New template here with {freq} Hz and {region}. #PowerOutage',
+  ],
+}
+```
+
+### Adding a new grid condition to generate tweets
+1. Add a new key to `TEMPLATES` in `js/tweets.js` matching the flag name from `grid_condition`
+2. Add templates for at least one persona
+3. Add the flag to the appropriate severity Set: `CRITICAL_FLAGS`, `MODERATE_FLAGS`, or `MINOR_FLAGS`
+4. If it should trigger a ticker message, add it to `TICKER_TEMPLATES` in `js/headlines.js`
 
 ### Adding a new tweet persona
 1. Add handles to `HANDLES` object in `js/tweets.js`
@@ -156,6 +237,16 @@ Matches the Lattice site (tamu-twin.onrender.com):
 3. Add a gauge/display in `index.html`
 4. Initialize the gauge in `app.js`
 5. Update it in the `State.subscribe()` callback
+
+### Weather tweet detection thresholds
+Weather tweets are generated in `generateTweets()` even during NORMAL grid conditions. The thresholds (in `js/tweets.js`):
+- `WEATHER_STORM_WARNING`: wind > 30 mph AND cloud > 80%
+- `WEATHER_WIND_SURGE`: wind > 25 mph
+- `WEATHER_WIND_DROP`: wind < 5 mph (daytime only, 8am-8pm local)
+- `WEATHER_CLOUD_SURGE`: cloud > 85% (daytime only, 8am-6pm local)
+- `WEATHER_CLEAR_SKY`: cloud < 10% (midday only, 10am-4pm local)
+
+Weather tweets have a 40% chance of appearing per timestep when detected. To adjust sensitivity, change the thresholds or the `Math.random() < 0.4` probability in the weather detection block.
 
 ### Updating data
 1. Run `scripts/process_weather_data.py` with new source CSVs
