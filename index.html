@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Weather Operations Dashboard</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- Header -->
+  <header class="header panel">
+    <h1 class="title">Weather Operations</h1>
+    <div class="iso-indicator">
+      <span class="micro-label">REGION</span>
+      <span class="iso-name mono" id="selected-iso-label">ERCOT</span>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <div class="main">
+    <!-- Left: Map -->
+    <section class="map-section panel">
+      <div class="panel-header">
+        <span class="micro-label">ISO REGIONS</span>
+      </div>
+      <div class="map-container" id="map-container">
+        <div class="map-tooltip" id="map-tooltip"></div>
+      </div>
+    </section>
+
+    <!-- Right: Data panels -->
+    <div class="data-panels">
+      <!-- Wind Panel -->
+      <section class="panel">
+        <div class="panel-header">
+          <span class="micro-label">WIND</span>
+        </div>
+        <div class="gauges-row">
+          <div class="gauge" id="gauge-wind100m"></div>
+          <div class="gauge" id="gauge-wind-surface"></div>
+          <div class="compass" id="compass"></div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-wind"></canvas>
+        </div>
+      </section>
+
+      <!-- Solar Panel -->
+      <section class="panel">
+        <div class="panel-header">
+          <span class="micro-label">SOLAR</span>
+        </div>
+        <div class="gauges-row">
+          <div class="gauge" id="gauge-dhi"></div>
+          <div class="gauge" id="gauge-cloud"></div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-solar"></canvas>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Playback -->
+  <div class="playback panel">
+    <div class="controls-row">
+      <div class="transport">
+        <button class="btn" id="btn-back" title="Step back">
+          <span class="mono">&#9664;&#9664;</span>
+        </button>
+        <button class="btn play-btn" id="btn-play" title="Play">
+          <span class="mono" id="play-icon">&#9654;</span>
+          <span id="play-label">PLAY</span>
+        </button>
+        <button class="btn" id="btn-forward" title="Step forward">
+          <span class="mono">&#9654;&#9654;</span>
+        </button>
+      </div>
+
+      <div class="scrubber">
+        <input type="range" min="0" max="208" value="0" class="timeline-slider" id="scrubber" />
+        <span class="timestamp mono" id="timestamp-label">--</span>
+      </div>
+
+      <div class="speed-selector">
+        <span class="micro-label">SPEED</span>
+        <div class="speed-buttons">
+          <button class="btn speed-btn active" data-speed="1">1x</button>
+          <button class="btn speed-btn" data-speed="2">2x</button>
+          <button class="btn speed-btn" data-speed="5">5x</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Libraries (CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
+<!-- App modules -->
+<script src="js/state.js"></script>
+<script src="js/gauge.js"></script>
+<script src="js/compass.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/map.js"></script>
+<script src="js/playback.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

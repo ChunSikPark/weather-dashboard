@@ -1,0 +1,82 @@
+:root {
+  /* Backgrounds */
+  --bg-primary: #0a0c10;
+  --bg-surface-1: #10131a;
+  --bg-surface-2: #161a24;
+  --border: #1c1d1f;
+
+  /* Text */
+  --text-primary: #e0e4ef;
+  --text-secondary: #8891a8;
+  --text-tertiary: #9da3c0;
+
+  /* Accent */
+  --cyan: #06b6d4;
+  --cyan-glow: color-mix(in oklch, #06b6d4 12%, transparent);
+  --red: #e04848;
+  --amber: #b89858;
+  --green: #5fa072;
+
+  /* Typography */
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Menlo', monospace;
+
+  /* Spacing & Shape */
+  --radius: 0.125rem;
+  --transition: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.micro-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-secondary);
+}
+
+.panel {
+  background: var(--bg-surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.panel-header {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
