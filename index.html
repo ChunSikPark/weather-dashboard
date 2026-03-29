@@ -49,35 +49,6 @@
 
     <!-- Right: Data panels -->
     <div class="data-panels">
-      <!-- Wind Panel -->
-      <section class="panel">
-        <div class="panel-header">
-          <span class="micro-label">WIND</span>
-        </div>
-        <div class="gauges-row">
-          <div class="gauge" id="gauge-wind100m"></div>
-          <div class="gauge" id="gauge-wind-surface"></div>
-          <div class="compass" id="compass"></div>
-        </div>
-        <div class="chart-container">
-          <canvas id="chart-wind"></canvas>
-        </div>
-      </section>
-
-      <!-- Solar Panel -->
-      <section class="panel">
-        <div class="panel-header">
-          <span class="micro-label">SOLAR</span>
-        </div>
-        <div class="gauges-row">
-          <div class="gauge" id="gauge-dhi"></div>
-          <div class="gauge" id="gauge-cloud"></div>
-        </div>
-        <div class="chart-container">
-          <canvas id="chart-solar"></canvas>
-        </div>
-      </section>
-
       <!-- Grid Status Panel -->
       <section class="panel grid-status-panel">
         <div class="panel-header">
@@ -109,6 +80,35 @@
             <span class="status-value mono" id="status-lmp">--</span>
             <span class="status-unit">$/MWh</span>
           </div>
+        </div>
+      </section>
+
+      <!-- Wind Panel -->
+      <section class="panel">
+        <div class="panel-header">
+          <span class="micro-label">WIND</span>
+        </div>
+        <div class="gauges-row">
+          <div class="gauge" id="gauge-wind100m"></div>
+          <div class="gauge" id="gauge-wind-surface"></div>
+          <div class="compass" id="compass"></div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-wind"></canvas>
+        </div>
+      </section>
+
+      <!-- Solar Panel -->
+      <section class="panel">
+        <div class="panel-header">
+          <span class="micro-label">SOLAR</span>
+        </div>
+        <div class="gauges-row">
+          <div class="gauge" id="gauge-dhi"></div>
+          <div class="gauge" id="gauge-cloud"></div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chart-solar"></canvas>
         </div>
       </section>
 
