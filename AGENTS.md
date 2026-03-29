@@ -261,3 +261,119 @@ Weather tweets have a 40% chance of appearing per timestep when detected. To adj
 5. Add lat/lon to `ISO_LAT` / `ISO_LON` in `app.js`
 6. Add timezone to `ISO_TZ` in `js/tweets.js`
 7. Add handles to `HANDLES.citizen` in `js/tweets.js`
+
+---
+
+## Porting to Another Framework / Language
+
+This dashboard was built as a plain HTML/CSS/JS prototype. If the team decides to integrate it into an existing app (e.g., the Lattice SvelteKit app) or rewrite in React/Vue/etc., here's what matters.
+
+### Architecture Overview (Framework-Agnostic)
+
+The app has 4 clean layers. Any port should preserve this separation:
+
+```
+1. DATA LAYER      — CSV loading, cleaning, synthetic solar calc
+2. STATE LAYER     — Selected ISO, current timestep, playback, observer pattern
+3. COMPONENT LAYER — Gauges, compass, map, charts, feed, headlines
+4. WIRING LAYER    — app.js ties data + state + components together
+```
+
+### What to Port (by priority)
+
+**Port first — these are the core:**
+1. `state.js` — Convert to your framework's state management (Svelte stores, React useState/useReducer, Vue reactive). The State object is a single source of truth with an observer pattern — map this to whatever reactivity system your framework uses.
+2. `app.js` — Data loading logic. The `d3.csv()` calls can be replaced with any CSV parser (PapaParse, native fetch + split, framework data loaders). The `cleanValue()` and `syntheticGHI()` functions are pure JS — copy as-is.
+3. `index.html` layout — The 3-column layout (map | data | feed) with ticker and playback bar. Convert to your framework's component structure.
+
+**Port second — visual components:**
+4. `gauge.js` — SVG gauge. Currently builds SVG via innerHTML strings. In a component framework, convert to JSX/Svelte template/Vue template. The math (needle angle calc) is pure JS — copy as-is.
+5. `compass.js` — Same as gauge, SVG with rotation math.
+6. `map.js` — D3 map rendering. D3 works in any framework. In React, use a ref to get the DOM node and run D3 inside useEffect. In Svelte, use onMount + bind:this.
+7. `charts.js` — Chart.js wrapper. Chart.js also works in any framework. Or replace with Recharts (React), chart.js-svelte, etc.
+
+**Port last — these are mostly data/config:**
+8. `tweets.js` — The TEMPLATES object and persona HANDLES are pure data (JSON-like). `buildVars()`, `generateTweets()`, `fillTemplate()` are pure functions with zero DOM dependency. Copy directly into any language.
+9. `feed.js` — DOM manipulation for the tweet list. Replace with your framework's list rendering (map/each/v-for).
+10. `headlines.js` — SCENARIO_HEADLINES and TICKER_TEMPLATES are pure data. `showPopup()`/`updateTicker()` are thin DOM wrappers — replace with framework modal/toast components.
+
+### Key Functions That Are Pure JS (Copy Directly)
+
+These have zero DOM or framework dependency — they work in any JS environment:
+
+| Function | File | What It Does |
+|----------|------|-------------|
+| `cleanValue(v)` | app.js | Converts CSV strings to numbers, handles -9999/NaN/empty |
+| `syntheticGHI(datetime, cloud, lat, lon)` | app.js | Solar irradiance from position + clouds |
+| `buildVars(gridRow, weatherRow, iso)` | tweets.js | Builds template variable object from data |
+| `fillTemplate(template, vars)` | tweets.js | Simple `{var}` replacement in strings |
+| `generateTweets(gridRow, weatherRow, iso)` | tweets.js | Picks templates, fills variables, returns tweet objects |
+| `getSeverityTier(flags)` | tweets.js | Classifies grid_condition flags into severity |
+| `toCardinal(degrees)` | compass.js | Converts degrees to cardinal direction string |
+| `formatLocalTime(datetime, iso)` | tweets.js | UTC to local time string |
+
+### Data Objects That Are Pure Config (Copy Directly)
+
+| Object | File | What It Is |
+|--------|------|-----------|
+| `TEMPLATES` | tweets.js | All tweet templates keyed by condition + persona |
+| `HANDLES` | tweets.js | Fake Twitter handles per persona per ISO |
+| `ISO_TZ` | tweets.js | Timezone offset + label per ISO |
+| `ISO_LAT` / `ISO_LON` | app.js | Approximate lat/lon per ISO for solar calc |
+| `SCENARIO_HEADLINES` | headlines.js | 7 handcrafted news popup headlines |
+| `GENERIC_CRITICAL_HEADLINES` | headlines.js | Fallback headlines for critical flags |
+| `TICKER_TEMPLATES` | headlines.js | One-line ticker messages per minor flag |
+| `CRITICAL_FLAGS` / `MODERATE_FLAGS` / `MINOR_FLAGS` | tweets.js | Sets for severity classification |
+
+### CSS / Design Tokens
+
+All visual styling lives in two CSS files:
+- `tokens.css` — Design tokens as CSS custom properties (`--bg-primary`, `--cyan`, `--font-mono`, etc.)
+- `dashboard.css` — All layout and component styles
+
+To port the design:
+- If the target uses CSS: copy `tokens.css` as-is, adapt `dashboard.css` layout to your component structure
+- If the target uses Tailwind: map tokens to tailwind.config.js theme, replace classes
+- If the target uses CSS-in-JS: extract token values into a theme object
+
+The key visual rules to preserve:
+- Monospace font (`JetBrains Mono`) for all numeric data values
+- Micro-labels: uppercase, bold, wide letter-spacing, secondary color
+- Panels: `bg-surface-1` background, 1px border, sharp corners (0.125rem)
+- Cyan (`#06b6d4`) for all active/selected/accent states
+- Color coding: amber (`#b89858`) for warnings, red (`#e04848`) for critical
+
+### Gotchas When Porting
+
+1. **D3 + frameworks**: D3 manages its own DOM. In React/Vue, don't let the framework re-render the D3 container — use refs and lifecycle hooks to keep D3 in control of its own SVG.
+
+2. **Chart.js plugin**: The `verticalLinePlugin` in `charts.js` draws the cyan timestep marker. It accesses `chart._currentTimestep` (a custom property). If you switch chart libraries, you need to reimplement this marker.
+
+3. **Script load order matters**: `headlines.js` calls `buildVars()` and `fillTemplate()` from `tweets.js`. In a module system (ES modules, bundler), make sure these are imported properly.
+
+4. **State.setISO override in app.js**: The original `setISO` is overridden to also update charts and regenerate the feed. In a reactive framework, this should be a derived effect / subscription, not a method override.
+
+5. **Grid ops filename mapping**: `ISO-NE` (hyphen in ISO name) maps to `grid_ops_ISO_NE.csv` (underscore in filename). This is handled by `gridOpsFileMap` in `app.js`. Don't forget this mapping.
+
+6. **Playback interval**: `State._startPlayback()` uses `setInterval`. In frameworks with lifecycle management, make sure to clean up the interval on component unmount.
+
+7. **Feed regeneration on ISO switch**: When the user switches ISOs, the feed clears and regenerates all tweets from timestep 0 to current. This loops through all past timesteps calling `generateTweets()` — could be slow if you add many more timesteps. Consider caching if scaling beyond 209 steps.
+
+### If Porting to SvelteKit (Lattice)
+
+The Lattice app (tamu-twin.onrender.com) uses SvelteKit. Suggested mapping:
+
+| Current | SvelteKit Equivalent |
+|---------|---------------------|
+| `state.js` (State object) | Svelte writable/derived stores in `$lib/stores/` |
+| `gauge.js` (innerHTML SVG) | `Gauge.svelte` component with reactive props |
+| `compass.js` | `Compass.svelte` with `tweened` for smooth rotation |
+| `map.js` (D3) | `ISOMap.svelte` with `onMount` + D3 on bound element |
+| `charts.js` (Chart.js) | `TimeChart.svelte` with Chart.js in `onMount` |
+| `tweets.js` (templates) | `$lib/feed/templates.ts` — pure data + functions |
+| `feed.js` (DOM list) | `FeedPanel.svelte` with `{#each}` loop |
+| `headlines.js` (popup) | `NewsPopup.svelte` + `Ticker.svelte` |
+| `app.js` (wiring) | `+page.svelte` or `+layout.svelte` with `onMount` data loading |
+| `tokens.css` | Import as global CSS or convert to Lattice's existing token system |
+
+The Lattice site already has its own design token system — match their existing `--color-*` variable names rather than introducing new ones.
