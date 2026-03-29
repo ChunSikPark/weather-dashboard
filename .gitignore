@@ -1,0 +1,20 @@
+# Development files (not needed for GitHub Pages)
+scripts/
+AGENTS.md
+DATA_FORMAT.md
+docs/
+
+# Combined CSV (dashboard uses per-ISO files only)
+data/weather_by_iso.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
