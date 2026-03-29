@@ -103,6 +103,50 @@
   await Promise.all(loadPromises);
   State.isoList = Object.keys(State.weatherData).sort();
 
+  // ── Load Grid Ops data for all ISOs ──
+  const gridOpsFileMap = {
+    'CAISO': 'grid_ops_CAISO.csv',
+    'ERCOT': 'grid_ops_ERCOT.csv',
+    'ISO-NE': 'grid_ops_ISO_NE.csv',
+    'MISO': 'grid_ops_MISO.csv',
+    'NYISO': 'grid_ops_NYISO.csv',
+    'Northwest': 'grid_ops_Northwest.csv',
+    'PJM': 'grid_ops_PJM.csv',
+    'SPP': 'grid_ops_SPP.csv',
+    'Southeast': 'grid_ops_Southeast.csv',
+    'Southwest': 'grid_ops_Southwest.csv',
+  };
+
+  const gridOpsPromises = Object.entries(gridOpsFileMap).map(async ([iso, file]) => {
+    const url = `data/${file}`;
+    try {
+      const rows = await d3.csv(url);
+      State.gridOpsData[iso] = rows.map(row => ({
+        datetime_utc: row.datetime_utc,
+        demand_mw: +row.demand_mw,
+        total_generation_mw: +row.total_generation_mw,
+        wind_generation_mw: +row.wind_generation_mw,
+        solar_generation_mw: +row.solar_generation_mw,
+        thermal_generation_mw: +row.thermal_generation_mw,
+        spinning_reserve_mw: +row.spinning_reserve_mw,
+        frequency_hz: +row.frequency_hz,
+        ace_mw: +row.ace_mw,
+        lmp_usd_per_mwh: +row.lmp_usd_per_mwh,
+        net_interchange_mw: +row.net_interchange_mw,
+        renewable_penetration_pct: +row.renewable_penetration_pct,
+        reserve_margin_pct: +row.reserve_margin_pct,
+        grid_condition: row.grid_condition,
+        wind_speed_hub_mph: +row.wind_speed_hub_mph,
+        solar_irradiance_wm2: +row.solar_irradiance_wm2,
+        cloud_cover_pct: +row.cloud_cover_pct,
+      }));
+    } catch (e) {
+      console.warn(`Failed to load ${url}:`, e);
+    }
+  });
+
+  await Promise.all(gridOpsPromises);
+
   // ── Initialize Components ──
 
   // Map
@@ -125,6 +169,10 @@
 
   // Playback
   initPlayback();
+
+  // Feed & Headlines
+  initFeed();
+  initHeadlines();
 
   // ── Chart update: only show data up to current timestep ──
   function updateCharts() {
@@ -170,12 +218,32 @@
 
     // Update charts with data up to current timestep
     updateCharts();
+
+    // Feed & Headlines
+    const gridRow = state.currentGridOps;
+    const weatherRow = state.currentData;
+    if (gridRow) {
+      const newTweets = generateTweets(gridRow, weatherRow, state.selectedISO);
+      addTweets(newTweets);
+      checkHeadlines(gridRow, weatherRow, state.selectedISO, state.currentTimestep);
+    }
   });
 
-  // Update charts when ISO changes
+  // Update charts and feed when ISO changes
   const originalSetISO = State.setISO.bind(State);
   State.setISO = function(iso) {
     originalSetISO(iso);
+    clearFeed();
+    resetTweetHistory();
+    // Regenerate tweets for all timesteps up to current
+    const gridTs = State.gridOpsData[iso] || [];
+    const weatherTs = State.weatherData[iso] || [];
+    for (let i = 0; i <= State.currentTimestep; i++) {
+      if (gridTs[i]) {
+        const tweets = generateTweets(gridTs[i], weatherTs[i] || null, iso);
+        addTweets(tweets);
+      }
+    }
     updateCharts();
   };
 
