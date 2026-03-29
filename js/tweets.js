@@ -19,18 +19,6 @@ const ISO_TZ = {
 
 // ── Persona handles (rotate randomly) ──
 const HANDLES = {
-  operator: {
-    'ERCOT': ['@ERCOT_Ops', '@ERCOT_GridStatus', '@ERCOT_Alert'],
-    'CAISO': ['@CAISO_Ops', '@CAISO_GridAlert', '@CAISO_Status'],
-    'PJM': ['@PJM_Ops', '@PJM_GridWatch', '@PJM_Alert'],
-    'MISO': ['@MISO_Ops', '@MISO_GridStatus', '@MISO_Alert'],
-    'SPP': ['@SPP_Ops', '@SPP_GridWatch', '@SPP_Alert'],
-    'NYISO': ['@NYISO_Ops', '@NYISO_GridStatus', '@NYISO_Alert'],
-    'ISO-NE': ['@ISONE_Ops', '@ISONE_GridWatch', '@ISONE_Alert'],
-    'Northwest': ['@NW_GridOps', '@NW_PowerStatus', '@NW_GridAlert'],
-    'Southeast': ['@SE_GridOps', '@SE_PowerStatus', '@SE_GridAlert'],
-    'Southwest': ['@SW_GridOps', '@SW_PowerStatus', '@SW_GridAlert'],
-  },
   journalist: ['@SarahEnergyBeat', '@GridWatchMike', '@PowerLineNews', '@EnergyDeskHQ'],
   citizen: {
     'ERCOT': ['@jenny_tx_mom', '@houston_dave', '@atx_carlos', '@dfw_resident'],
@@ -44,50 +32,21 @@ const HANDLES = {
     'Southeast': ['@atlanta_peach', '@florida_sun', '@charlotte_runner', '@nashville_music'],
     'Southwest': ['@phoenix_heat', '@abq_sunset', '@vegas_local', '@tucson_cactus'],
   },
-  trader: ['@RTOTrader', '@WattStreetBets', '@ElectronAlpha', '@SparkSpreadKing'],
+  business: ['@AWS_CloudStatus', '@GoogleCloud_Ops', '@MSAzureStatus', '@MetaDC_Ops', '@TexasManufacturers', '@DataCenterWatch', '@IndustrialPowerUSA'],
+  legal: ['@EnergyRightsNow', '@GridAccountability', '@ConsumerPowerLaw', '@Sen_GridOversight', '@TX_AG_Consumer', '@PublicCitizen_Energy'],
 };
 
 // ── Template Library ──
 
 const TEMPLATES = {
-  // ── NORMAL conditions ──
-  NORMAL: {
-    operator: [
-      'Good {timeOfDay} from {region}. System operating normally. Demand at {demand_gw} GW, frequency {freq} Hz. All units online.',
-      '{region} grid status: Normal operations. Load {demand_gw} GW, reserves at {reserve_pct}%. Next update in 1 hour.',
-      'Routine update: {region} demand {demand_gw} GW. Wind {wind_gw} GW, solar {solar_gw} GW. LMP ${lmp}/MWh.',
-    ],
-    journalist: [
-      '{region} running smooth tonight — {renewable_pct}% renewable with wind at {wind_gw} GW. Wholesale power at ${lmp}/MWh. #EnergyMarkets',
-      'Quiet {timeOfDay} on the {region} grid. Demand at {demand_gw} GW with a comfortable {reserve_pct}% reserve margin. #GridWatch',
-      'Market check: {region} LMP at ${lmp}/MWh. Wind carrying {wind_gw} GW, thermal filling the rest at {thermal_gw} GW. #PowerMarkets',
-    ],
-    citizen: [
-      'Nice quiet {timeOfDay}. Power bill better be reasonable this month {region_hashtag}',
-      'Just checked my smart meter — electricity is cheap right now in {region}. ${lmp}/MWh wholesale.',
-    ],
-    trader: [
-      '{region} flat at ${lmp}/MWh. Nothing to see here. Wind at {wind_gw} GW. Boring. #PowerTrading',
-      'Day-ahead clearing at ${lmp} for {region}. Renewables at {renewable_pct}%. Standard shoulder season stuff.',
-    ],
-  },
-
   // ── Minor events ──
   FREQ_ALERT: {
-    operator: [
-      '{region} frequency at {freq} Hz — monitoring closely. Reserves being evaluated. No public action needed at this time.',
-      'Notice: {region} grid frequency dipped to {freq} Hz. Spinning reserves responding. Situation under monitoring.',
-    ],
     journalist: [
-      '{region} grid frequency dipped to {freq} Hz briefly. Operators monitoring but no emergency declared yet. Reserve margin at {reserve_pct}%. #GridWatch',
+      '{region} grid frequency dipped to {freq} Hz. Operators monitoring but no emergency declared yet. Reserve margin at {reserve_pct}%. #GridWatch',
     ],
   },
 
   EEA1_CONSERVATION_APPEAL: {
-    operator: [
-      'CONSERVATION ALERT: {region} requests voluntary electricity reduction. Reserve margin down to {reserve_pct}%. Please limit non-essential use.',
-      '{region} issues conservation appeal. Demand at {demand_gw} GW approaching available capacity. Reduce electricity use if possible.',
-    ],
     journalist: [
       'JUST IN: {region} asking residents to conserve electricity. Reserves at {reserve_pct}% — not an emergency yet, but getting tight. #GridWatch',
     ],
@@ -95,11 +54,13 @@ const TEMPLATES = {
       'Just got a text from {region} saying reduce electricity use?? Its {local_time} and my AC is barely on. Whats going on?',
       'My utility app just sent a conservation alert for {region}. Should I be worried? #PowerGrid',
     ],
+    business: [
+      'Received conservation directive from {region}. Shifting non-critical compute workloads to off-peak. Data center load reduction protocols initiated.',
+    ],
   },
 
   HIGH_RENEWABLES: {
     journalist: [
-      'Impressive: {region} renewables providing {renewable_pct}% of demand right now. Wind at {wind_gw} GW, solar {solar_gw} GW. #RenewableEnergy',
       'Renewables crossed the 50% mark in {region} — {renewable_pct}% of load served by wind and solar this hour. #CleanEnergy',
     ],
   },
@@ -108,93 +69,67 @@ const TEMPLATES = {
     journalist: [
       'RECORD: {region} renewables at {renewable_pct}% of demand! Wind {wind_gw} GW + solar {solar_gw} GW. Thermal barely needed. #RenewableEnergy',
     ],
-    operator: [
-      '{region} renewable output at record levels — {renewable_pct}% of demand. Monitoring frequency and interchange closely.',
-    ],
   },
 
   RENEWABLES_EXCEED_DEMAND: {
     journalist: [
       'HISTORIC: {region} renewables now producing MORE than total demand — {renewable_pct}%! Excess power being exported. #RenewableEnergy #Milestone',
-      'Incredible milestone in {region}: wind + solar output exceeds 100% of electricity demand. Renewable penetration at {renewable_pct}%. #GridWatch',
-    ],
-    trader: [
-      '{region} renewables at {renewable_pct}% of demand. Prices collapsing to ${lmp}/MWh. Curtailment coming. Short the spark spread. #PowerTrading',
     ],
     citizen: [
       'Wait... {region} is running on MORE than 100% renewable power right now?? {renewable_pct}%!! The future is here #CleanEnergy',
     ],
-  },
-
-  LOW_RENEWABLES: {
-    journalist: [
-      'Quiet night for renewables in {region} — only {renewable_pct}% of demand. Thermal plants carrying {thermal_gw} GW. Wind at just {wind_gw} GW. #EnergyMix',
+    business: [
+      'Excellent renewable conditions in {region}. Moving batch processing and AI training jobs to this region. ${lmp}/MWh wholesale. #GreenCompute',
     ],
   },
 
   HIGH_PRICE: {
-    trader: [
-      '{region} LMP spiking to ${lmp}/MWh. Reserves at {reserve_pct}%. Getting interesting. #PowerPrices',
-      'Alert: {region} real-time price ${lmp}/MWh and climbing. Demand {demand_gw} GW vs gen {gen_gw} GW. #EnergyMarkets',
-    ],
     journalist: [
       'Power prices climbing in {region}: ${lmp}/MWh as demand hits {demand_gw} GW with tight reserves at {reserve_pct}%. #ElectricityPrices',
+    ],
+    business: [
+      'Wholesale power in {region} rising to ${lmp}/MWh. Evaluating temporary workload migration to lower-cost regions. Margins getting thin.',
     ],
   },
 
   PRICE_SPIKE: {
-    trader: [
-      '{region} PRICE SPIKE: ${lmp}/MWh!! Reserve margin at {reserve_pct}%. This is getting ugly. #PowerPrices #GridEmergency',
-      'HOLY COW — {region} real-time at ${lmp}/MWh. Scarcity pricing kicking in. Frequency at {freq} Hz. #WattStreetBets',
-    ],
     journalist: [
       'BREAKING: {region} wholesale power surges to ${lmp}/MWh. Reserve margin just {reserve_pct}%. Grid stress increasing. #ElectricityPrices',
     ],
     citizen: [
       'Wholesale electricity in {region} is at ${lmp}/MWh right now?! Thats insane. My next bill is going to be brutal. #PowerPrices',
     ],
-  },
-
-  LOW_PRICE: {
-    trader: [
-      '{region} LMP dropped to ${lmp}/MWh. Oversupply. Wind at {wind_gw} GW flooding the market. #NegativePrices',
+    business: [
+      'ALERT: {region} spot prices at ${lmp}/MWh. Activating emergency cost containment. Non-essential cooling and lighting reduced across all facilities.',
+      'Power costs in {region} just jumped to ${lmp}/MWh. Our data center operating costs just tripled this hour. Shareholders wont be happy.',
     ],
-    journalist: [
-      'Cheap power in {region}: wholesale at just ${lmp}/MWh overnight as wind output holds at {wind_gw} GW. #EnergyMarkets',
+    legal: [
+      'Monitoring {region} price spike to ${lmp}/MWh. If sustained, expect consumer complaints and regulatory scrutiny. #EnergyPolicy',
     ],
   },
 
   NEGATIVE_PRICE: {
-    trader: [
-      'NEGATIVE PRICES in {region}: ${lmp}/MWh. Wind farms paying to stay online. Curtailment imminent. #NegativePrices',
-    ],
     journalist: [
       'Power prices negative in {region} at ${lmp}/MWh — generators literally paying consumers to use electricity. Renewables at {renewable_pct}%. #EnergyMarkets',
     ],
     citizen: [
       'Wait... electricity prices are NEGATIVE in {region}?? ${lmp}/MWh?? Does that mean I get paid to run my AC? #NegativePrices',
     ],
+    business: [
+      'Negative pricing in {region} (${lmp}/MWh). Spinning up every available compute job. Free energy is free money. #DataCenterOps',
+    ],
   },
 
   DEEP_NEGATIVE_PRICE: {
-    trader: [
-      'DEEP NEGATIVE: {region} at ${lmp}/MWh. Generators hemorrhaging money. Who approved this dispatch?! #PowerTrading',
-    ],
     journalist: [
       'Extreme: {region} power prices hit ${lmp}/MWh. Wind farms paying ${neg_lmp}/MWh to give away electricity. System oversupplied by {overgen_pct}%. #EnergyMarkets',
     ],
-  },
-
-  OVERFREQ_ALERT: {
-    operator: [
-      '{region} frequency at {freq} Hz — slightly elevated. Governor response active. Monitoring generation output.',
+    business: [
+      'Deep negative pricing in {region}: ${lmp}/MWh. Running maximum capacity across all facilities. Getting PAID to consume electricity.',
     ],
   },
 
   OVERFREQ_WARNING: {
-    operator: [
-      'WARNING: {region} frequency elevated to {freq} Hz. Curtailing generation. Operators actively reducing output.',
-    ],
     journalist: [
       'Unusual: {region} grid frequency at {freq} Hz — too MUCH power being generated. Operators scrambling to curtail. #GridWatch',
     ],
@@ -202,36 +137,31 @@ const TEMPLATES = {
 
   // ── Critical events ──
   FREQ_EEA1: {
-    operator: [
-      'ALERT: {region} declares Energy Emergency Alert Level 1. Frequency at {freq} Hz. All reserves committed. Conservation appeal in effect.',
-    ],
     journalist: [
       'BREAKING: {region} declares EEA-1. Grid frequency at {freq} Hz, reserves at {reserve_pct}%. All spinning reserves deployed. #GridEmergency',
     ],
     citizen: [
       'Just heard {region} declared some kind of grid emergency?? Level 1? What does that mean? Should I turn stuff off? #PowerGrid',
     ],
+    business: [
+      '{region} EEA-1 declared. Initiating demand response across all {region} facilities. Reducing non-critical load per grid operator request.',
+    ],
   },
 
   FREQ_EEA2: {
-    operator: [
-      'EMERGENCY: {region} escalates to Energy Emergency Alert Level 2. Frequency {freq} Hz. Emergency power purchases activated. Reduce use NOW.',
-    ],
     journalist: [
       'BREAKING: {region} grid emergency Level 2. Frequency at {freq} Hz. Emergency imports underway. All available generation deployed. #GridEmergency',
     ],
     citizen: [
       'Power flickered at my house. {region} is in a grid emergency?? Frequency at {freq} Hz. This is scary. #PowerOutage',
     ],
-    trader: [
-      '{region} EEA-2. LMP at ${lmp}/MWh and climbing. Reserve margin {reserve_pct}%. Emergency purchases across all interfaces. #GridEmergency',
+    business: [
+      'CRITICAL: {region} EEA-2. Activating backup generators at all data center facilities. Customer-facing services transitioning to backup power.',
+      '{region} grid emergency escalating. LMP at ${lmp}/MWh. Emergency procurement team activated. Evaluating all power purchase agreements.',
     ],
   },
 
   FREQ_EMERGENCY: {
-    operator: [
-      'CRITICAL: {region} — rotating outages ordered. Frequency {freq} Hz. Reserve margin {reserve_pct}%. Follow all conservation directives.',
-    ],
     journalist: [
       'BREAKING: {region} orders rolling blackouts. Grid frequency at {freq} Hz — dangerously low. Reserves at just {reserve_mw} MW ({reserve_pct}%). #RollingBlackouts',
     ],
@@ -240,83 +170,102 @@ const TEMPLATES = {
       'Just lost power in my neighborhood. {region} grid at {freq} Hz. How did we let it get this bad? #GridEmergency',
       'Lights went out at {local_time}. {region} says rolling blackouts. Great. Just great. #PowerOutage',
     ],
-    trader: [
-      '{region} EEA-3 DECLARED. LMP ${lmp}/MWh. Frequency {freq} Hz. Load shed underway. This is the real deal. #GridEmergency',
+    business: [
+      'INCIDENT: {region} rolling blackouts affecting our {region} data center campus. Diesel generators running. Customer latency may increase. Status page updated.',
+      'Multiple manufacturing facilities in {region} forced offline by rolling blackouts. Production losses estimated in millions per hour. Board notified.',
+    ],
+    legal: [
+      'Rolling blackouts in {region} — our office is receiving calls from affected businesses and residents. Documenting all damages for potential legal action against grid operator.',
+      'If you lost power or suffered damages during {region} rolling blackouts, document everything. This may constitute negligence. #ConsumerRights',
     ],
   },
 
   UFLS_IMMINENT: {
-    operator: [
-      'EXTREME EMERGENCY: {region} frequency approaching UFLS threshold at {freq} Hz. Automatic load shedding may activate. REDUCE ALL NON-ESSENTIAL LOAD.',
-    ],
     journalist: [
       'BREAKING: {region} grid seconds from automatic blackouts. Frequency at {freq} Hz — UFLS triggers at 59.30 Hz. #GridCollapse',
     ],
     citizen: [
       'They just said on the news {region} is about to have automatic blackouts?? Frequency at {freq} Hz?? WHAT IS HAPPENING #GridEmergency',
     ],
+    business: [
+      'EMERGENCY: All {region} facilities on full backup power. UFLS imminent at {freq} Hz. Cloud services status: DEGRADED. Failover to secondary regions complete.',
+    ],
+    legal: [
+      'UFLS imminent in {region} at {freq} Hz. This represents a catastrophic failure of grid management. Preparing emergency filing with FERC. #Accountability',
+    ],
   },
 
   SCARCITY_PRICING: {
-    trader: [
-      'SCARCITY PRICING: {region} LMP at ${lmp}/MWh. This is not a drill. Full scarcity adder. Reserve margin {reserve_pct}%. #PowerPrices',
-    ],
     journalist: [
       '{region} scarcity pricing activated: ${lmp}/MWh. Thats ${lmp_per_kwh}/kWh — roughly {x_normal}x normal retail rates. #ElectricityPrices',
+    ],
+    business: [
+      'SCARCITY PRICING in {region}: ${lmp}/MWh. Our hourly power costs just exceeded our entire normal daily budget. CFO briefed.',
+    ],
+    legal: [
+      'Scarcity pricing at ${lmp}/MWh in {region} will devastate small businesses and fixed-income households. Calling for immediate investigation. #EnergyJustice',
     ],
   },
 
   VOLL_CAP_PRICING: {
-    trader: [
-      '{region} HIT THE CAP. $5,000/MWh. Maximum allowed. Thats $5/kWh. ~40x normal. Absolute crisis. #ERCOT #PowerPrices',
-    ],
     journalist: [
       'BREAKING: {region} power prices hit $5,000/MWh — the system cap. Thats $5 per kilowatt-hour, roughly 40x what you normally pay. #GridEmergency',
     ],
     citizen: [
       '$5,000 PER MEGAWATT HOUR?!? In {region}?? My electricity bill is going to be INSANE this month. How is this legal?! #PowerPrices',
     ],
+    business: [
+      'CRITICAL FINANCIAL ALERT: {region} at $5,000/MWh cap. All non-essential operations suspended. Emergency board meeting called. Estimated exposure: $XX million/hour.',
+    ],
+    legal: [
+      '$5,000/MWh in {region} is market manipulation pure and simple. Filing emergency complaint with PUCT and FERC. Affected ratepayers: contact our office. #GridAccountability',
+      'Senator calling for emergency hearing on {region} $5,000/MWh pricing. "Hardworking families should not pay for grid operator failures." #EnergyPolicy',
+    ],
   },
 
   EEA3_FIRM_LOAD_SHED: {
-    operator: [
-      'EMERGENCY: Controlled load shedding in progress across {region}. Rotating outages to stabilize grid. Stay away from downed lines.',
-    ],
     journalist: [
       'BREAKING: Controlled power outages underway in {region}. Grid operator shedding load to prevent total collapse. Demand at {demand_gw} GW. #RollingBlackouts',
     ],
     citizen: [
       'Power out for 30 minutes now. {region} says controlled outages. My food in the fridge... ugh. #RollingBlackouts',
+      'My elderly neighbor is on oxygen and the power just went out. {region} load shedding. Someone needs to answer for this. #PowerOutage',
+    ],
+    business: [
+      'UPDATE: {region} load shedding has taken 2 of our 5 facilities offline. Running on generators. SLA breach notifications sent to affected customers.',
+    ],
+    legal: [
+      'Class action inquiry: if {region} load shedding caused you financial harm, medical emergency, or property damage, we want to hear from you. #ConsumerProtection',
     ],
   },
 
   SEVERE_OVERGENERATION: {
-    operator: [
-      'WARNING: {region} generation exceeding demand. Curtailment orders issued. Frequency at {freq} Hz. Exporting {interchange_gw} GW to neighbors.',
-    ],
     journalist: [
       '{region} has too much power — generation {overgen_pct}% above demand. Frequency pushed to {freq} Hz. Emergency curtailment underway. #GridWatch',
     ],
   },
 
   GENERATION_SHORTFALL: {
-    operator: [
-      'ALERT: {region} generation shortfall. Output at {gen_pct}% of demand. Emergency imports and demand response activated.',
-    ],
     journalist: [
       '{region} facing generation shortfall — supply covering only {gen_pct}% of {demand_gw} GW demand. Emergency measures in effect. #GridEmergency',
+    ],
+    business: [
+      'Generation shortfall in {region}. Pre-positioning backup power and evaluating load migration options. Customers may see elevated latency.',
     ],
   },
 
   SEVERE_GENERATION_SHORTFALL: {
-    operator: [
-      'CRITICAL: {region} severe generation shortfall. Output at {gen_pct}% of demand. Load shedding in effect.',
-    ],
     journalist: [
       'BREAKING: {region} has lost {deficit_gw} GW of generation. Only {gen_pct}% of demand being met. Rolling outages expanded. #GridEmergency',
     ],
     citizen: [
       'How is {region} short on power by {deficit_gw} GW?? Dont we have enough power plants?? #GridEmergency #PowerOutage',
+    ],
+    business: [
+      'MAJOR INCIDENT: {deficit_gw} GW generation shortfall in {region}. All facilities on backup. Customer impact: HIGH. Incident commander activated.',
+    ],
+    legal: [
+      'A {deficit_gw} GW shortfall is not an act of God — its a failure of planning and investment. {region} ratepayers deserve answers and compensation. #GridReform',
     ],
   },
 
@@ -336,7 +285,6 @@ const TEMPLATES = {
   WEATHER_WIND_SURGE: {
     journalist: [
       'WEATHER: Wind speeds surging to {wind_mph} mph across {region}. Wind farms ramping up — expect increased renewable output. #WeatherWatch',
-      'Strong winds hitting {region} — {wind_mph} mph at hub height. Good news for wind generation, watch for curtailment if gusts pick up. #GridWeather',
     ],
     citizen: [
       'Its getting really windy out here in {region}. {wind_mph} mph winds. Hope the power stays on #Weather',
@@ -346,17 +294,15 @@ const TEMPLATES = {
   WEATHER_WIND_DROP: {
     journalist: [
       'WEATHER: Wind dying down across {region} — {wind_mph} mph at hub height. Thermal plants will need to pick up the slack. #GridWeather',
-      'Wind speeds dropping to {wind_mph} mph in {region}. Expect wind generation to fall. Gas plants standing by. #WeatherWatch',
     ],
   },
 
   WEATHER_CLOUD_SURGE: {
     journalist: [
       'WEATHER: Cloud cover jumping to {cloud_pct}% across {region}. Solar output will take a hit this afternoon. #GridWeather',
-      'Clouding up over {region} — {cloud_pct}% cover. Solar farms losing output. Thermal ramping to compensate. #WeatherWatch',
     ],
     citizen: [
-      'Skies getting really dark here in {region}. {cloud_pct}% cloud cover. Solar panels probably not doing much right now.',
+      'Skies getting really dark here in {region}. {cloud_pct}% cloud cover.',
     ],
   },
 
@@ -367,16 +313,15 @@ const TEMPLATES = {
   },
 
   WEATHER_STORM_WARNING: {
-    operator: [
-      'WEATHER ADVISORY: Severe weather conditions developing across {region}. Wind {wind_mph} mph with {cloud_pct}% cloud cover. Monitoring grid stability closely.',
-    ],
     journalist: [
       'WEATHER WARNING: Storm conditions in {region} — {wind_mph} mph winds, {cloud_pct}% cloud cover. Grid operators on alert for potential generation disruptions. #SevereWeather #GridWatch',
-      'Severe weather moving through {region}. High winds ({wind_mph} mph) could force turbine shutdowns while heavy clouds cut solar. Double threat to renewables. #StormWatch',
     ],
     citizen: [
       'Major storm rolling through {region} right now. Wind is howling at {wind_mph} mph. Power better not go out... #SevereWeather',
       'This storm in {region} is no joke. {wind_mph} mph winds and dark as night at {local_time}. Charging my phone just in case. #StormWatch',
+    ],
+    business: [
+      'Severe weather alert for {region}. Pre-staging backup generators and activating business continuity plans across all facilities. #DataCenterOps',
     ],
   },
 };
@@ -388,14 +333,14 @@ function pickRandom(arr) {
 }
 
 function getHandle(persona, iso) {
-  if (persona === 'operator') {
-    return pickRandom(HANDLES.operator[iso] || ['@GridOps']);
-  } else if (persona === 'citizen') {
+  if (persona === 'citizen') {
     return pickRandom(HANDLES.citizen[iso] || ['@local_resident']);
   } else if (persona === 'journalist') {
     return pickRandom(HANDLES.journalist);
-  } else if (persona === 'trader') {
-    return pickRandom(HANDLES.trader);
+  } else if (persona === 'business') {
+    return pickRandom(HANDLES.business);
+  } else if (persona === 'legal') {
+    return pickRandom(HANDLES.legal);
   }
   return '@unknown';
 }
@@ -560,19 +505,19 @@ function generateTweets(gridRow, weatherRow, iso) {
 
   if (count === 0) return [];
 
-  // Determine which personas speak
+  // Determine which personas speak (no grid operator — only external reactions)
   const personaPool = [];
   if (tier === 'critical') {
-    personaPool.push('operator', 'journalist', 'citizen', 'trader');
+    personaPool.push('journalist', 'citizen', 'business', 'legal');
   } else if (tier === 'moderate') {
-    personaPool.push('operator', 'journalist');
-    if (flags.some(f => f.includes('PRICE') || f === 'SCARCITY_PRICING')) personaPool.push('trader');
+    personaPool.push('journalist');
+    if (flags.some(f => f.includes('PRICE') || f === 'SCARCITY_PRICING')) personaPool.push('business');
     if (flags.some(f => f.includes('EEA') || f.includes('FREQ'))) personaPool.push('citizen');
-    if (flags.some(f => f.includes('RENEWABLE'))) personaPool.push('journalist');
+    if (flags.some(f => f.includes('RENEWABLE'))) personaPool.push('business');
   } else {
-    personaPool.push('operator', 'journalist');
+    // Weather or minor events
+    personaPool.push('journalist');
     if (Math.random() < 0.3) personaPool.push('citizen');
-    if (Math.random() < 0.3) personaPool.push('trader');
   }
 
   const tweets = [];
