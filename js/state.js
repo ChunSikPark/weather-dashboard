@@ -16,6 +16,10 @@ const State = {
   weatherData: {},  // { ISO_NAME: [ {datetime_utc, wind_speed_mph, ...}, ... ] }
   isoList: [],
   geojson: null,
+  gridOpsData: {},         // grid operations data keyed by ISO
+  feedTweets: [],          // generated tweet objects
+  shownPopups: new Set(),  // track which popups shown
+  _pausedForPopup: false,  // whether playback was paused by popup
 
   // Computed
   get totalTimesteps() {
@@ -32,10 +36,21 @@ const State = {
     return this.weatherData[this.selectedISO] || [];
   },
 
+  get currentGridOps() {
+    const series = this.gridOpsData[this.selectedISO];
+    return series ? series[this.currentTimestep] : null;
+  },
+
+  get gridOpsTimeseries() {
+    return this.gridOpsData[this.selectedISO] || [];
+  },
+
   // Actions
   setISO(iso) {
     this.selectedISO = iso;
     // Keep current timestep — all ISOs share the same timeline
+    this.feedTweets = [];
+    this.shownPopups = new Set();
     this._notify();
   },
 
@@ -71,6 +86,24 @@ const State = {
       this._startPlayback();
     }
     this._notify();
+  },
+
+  pauseForPopup() {
+    if (this.isPlaying) {
+      this._stopPlayback();
+      this.isPlaying = false;
+      this._pausedForPopup = true;
+      this._notify();
+    }
+  },
+
+  resumeFromPopup() {
+    if (this._pausedForPopup) {
+      this._pausedForPopup = false;
+      this.isPlaying = true;
+      this._startPlayback();
+      this._notify();
+    }
   },
 
   _startPlayback() {
