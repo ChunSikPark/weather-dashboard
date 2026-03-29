@@ -442,3 +442,42 @@
 .news-dismiss:hover {
   background: var(--cyan-glow);
 }
+
+/* ── Grid Status Panel ── */
+.grid-status-panel {
+  flex: 0 0 auto !important;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 0.625rem 0.75rem;
+  gap: 0.5rem;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.status-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.status-value.warn {
+  color: var(--amber);
+}
+
+.status-value.critical {
+  color: var(--red);
+}
+
+.status-unit {
+  font-size: 0.625rem;
+  color: var(--text-tertiary);
+}

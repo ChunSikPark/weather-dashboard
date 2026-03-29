@@ -331,6 +331,54 @@ const TEMPLATES = {
       '{region} flooding neighbors with {interchange_gw} GW of excess power. Renewables at {renewable_pct}% of demand. #PowerGrid',
     ],
   },
+
+  // ── Weather warnings ──
+  WEATHER_WIND_SURGE: {
+    journalist: [
+      'WEATHER: Wind speeds surging to {wind_mph} mph across {region}. Wind farms ramping up — expect increased renewable output. #WeatherWatch',
+      'Strong winds hitting {region} — {wind_mph} mph at hub height. Good news for wind generation, watch for curtailment if gusts pick up. #GridWeather',
+    ],
+    citizen: [
+      'Its getting really windy out here in {region}. {wind_mph} mph winds. Hope the power stays on #Weather',
+    ],
+  },
+
+  WEATHER_WIND_DROP: {
+    journalist: [
+      'WEATHER: Wind dying down across {region} — {wind_mph} mph at hub height. Thermal plants will need to pick up the slack. #GridWeather',
+      'Wind speeds dropping to {wind_mph} mph in {region}. Expect wind generation to fall. Gas plants standing by. #WeatherWatch',
+    ],
+  },
+
+  WEATHER_CLOUD_SURGE: {
+    journalist: [
+      'WEATHER: Cloud cover jumping to {cloud_pct}% across {region}. Solar output will take a hit this afternoon. #GridWeather',
+      'Clouding up over {region} — {cloud_pct}% cover. Solar farms losing output. Thermal ramping to compensate. #WeatherWatch',
+    ],
+    citizen: [
+      'Skies getting really dark here in {region}. {cloud_pct}% cloud cover. Solar panels probably not doing much right now.',
+    ],
+  },
+
+  WEATHER_CLEAR_SKY: {
+    journalist: [
+      'Clear skies across {region} — cloud cover down to {cloud_pct}%. Solar output should be strong today. #SolarEnergy #GridWeather',
+    ],
+  },
+
+  WEATHER_STORM_WARNING: {
+    operator: [
+      'WEATHER ADVISORY: Severe weather conditions developing across {region}. Wind {wind_mph} mph with {cloud_pct}% cloud cover. Monitoring grid stability closely.',
+    ],
+    journalist: [
+      'WEATHER WARNING: Storm conditions in {region} — {wind_mph} mph winds, {cloud_pct}% cloud cover. Grid operators on alert for potential generation disruptions. #SevereWeather #GridWatch',
+      'Severe weather moving through {region}. High winds ({wind_mph} mph) could force turbine shutdowns while heavy clouds cut solar. Double threat to renewables. #StormWatch',
+    ],
+    citizen: [
+      'Major storm rolling through {region} right now. Wind is howling at {wind_mph} mph. Power better not go out... #SevereWeather',
+      'This storm in {region} is no joke. {wind_mph} mph winds and dark as night at {local_time}. Charging my phone just in case. #StormWatch',
+    ],
+  },
 };
 
 // ── Helper functions ──
@@ -472,16 +520,42 @@ function generateTweets(gridRow, weatherRow, iso) {
   const localHour = getLocalHour(gridRow.datetime_utc, iso);
   const vars = buildVars(gridRow, weatherRow, iso);
 
-  // Determine tweet count
+  // Determine tweet count — normal conditions produce 0 tweets
   let count;
   if (tier === 'critical') {
-    count = 4 + Math.floor(Math.random() * 2); // 4-5
+    count = 3 + Math.floor(Math.random() * 2); // 3-4
   } else if (tier === 'moderate') {
-    count = 2 + Math.floor(Math.random() * 2); // 2-3
-  } else if (localHour >= 0 && localHour < 6) {
-    count = Math.random() < 0.5 ? 0 : 1; // 0-1 nighttime
+    count = 1 + Math.floor(Math.random() * 2); // 1-2
   } else {
-    count = 1 + Math.floor(Math.random() * 2); // 1-2 daytime
+    count = 0; // Normal = no tweets. Nobody posts when things are fine.
+  }
+
+  // ── Check for notable weather conditions (generates tweets even during NORMAL) ──
+  const weatherFlags = [];
+  if (weatherRow) {
+    const windMph = parseFloat(weatherRow.wind_speed_100m_mph || 0);
+    const cloudPct = parseFloat(weatherRow.cloud_cover_pct || 0);
+
+    // Storm: high wind + high cloud
+    if (windMph > 30 && cloudPct > 80) {
+      weatherFlags.push('WEATHER_STORM_WARNING');
+    } else if (windMph > 25) {
+      weatherFlags.push('WEATHER_WIND_SURGE');
+    } else if (windMph < 5 && localHour >= 8 && localHour <= 20) {
+      weatherFlags.push('WEATHER_WIND_DROP');
+    }
+
+    if (cloudPct > 85 && localHour >= 8 && localHour <= 18) {
+      weatherFlags.push('WEATHER_CLOUD_SURGE');
+    } else if (cloudPct < 10 && localHour >= 10 && localHour <= 16) {
+      weatherFlags.push('WEATHER_CLEAR_SKY');
+    }
+  }
+
+  // If weather is notable, generate 1 weather tweet even during normal
+  if (count === 0 && weatherFlags.length > 0 && Math.random() < 0.4) {
+    count = 1;
+    flags.push(...weatherFlags);
   }
 
   if (count === 0) return [];

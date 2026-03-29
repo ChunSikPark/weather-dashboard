@@ -15,6 +15,13 @@ let _popupDismiss = null;
 const SCENARIO_HEADLINES = [
   {
     iso: 'ERCOT',
+    startHour: '2026-03-25T15',
+    endHour: '2026-03-25T17',
+    headline: 'SEVERE WEATHER ADVISORY — STORM SYSTEM APPROACHING TEXAS',
+    body: 'National Weather Service warns of strong winds and unseasonable heat across ERCOT territory. Wind gusts may force turbine shutdowns while demand surges. Grid operators preparing for potential stress.',
+  },
+  {
+    iso: 'ERCOT',
     startHour: '2026-03-25T18',
     endHour: '2026-03-25T23',
     headline: 'ROLLING BLACKOUTS ORDERED AS ERCOT GRID FREQUENCY HITS 59.35 Hz',

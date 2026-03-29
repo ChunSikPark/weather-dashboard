@@ -219,8 +219,47 @@
     // Update charts with data up to current timestep
     updateCharts();
 
-    // Feed & Headlines
+    // Grid status display
     const gridRow = state.currentGridOps;
+    if (gridRow) {
+      const demandEl = document.getElementById('status-demand');
+      const reservesEl = document.getElementById('status-reserves');
+      const reservePctEl = document.getElementById('status-reserve-pct');
+      const freqEl = document.getElementById('status-freq');
+      const lmpEl = document.getElementById('status-lmp');
+
+      demandEl.textContent = (gridRow.demand_mw / 1000).toFixed(1);
+      reservesEl.textContent = Math.round(gridRow.spinning_reserve_mw).toLocaleString();
+      reservePctEl.textContent = gridRow.reserve_margin_pct.toFixed(1);
+      freqEl.textContent = gridRow.frequency_hz.toFixed(2);
+      lmpEl.textContent = Math.round(gridRow.lmp_usd_per_mwh).toLocaleString();
+
+      // Color coding for frequency
+      freqEl.className = 'status-value mono';
+      if (gridRow.frequency_hz < 59.75 || gridRow.frequency_hz > 60.25) {
+        freqEl.classList.add('critical');
+      } else if (gridRow.frequency_hz < 59.9 || gridRow.frequency_hz > 60.1) {
+        freqEl.classList.add('warn');
+      }
+
+      // Color coding for reserves
+      reservePctEl.className = 'status-value mono';
+      if (gridRow.reserve_margin_pct < 3) {
+        reservePctEl.classList.add('critical');
+      } else if (gridRow.reserve_margin_pct < 6) {
+        reservePctEl.classList.add('warn');
+      }
+
+      // Color coding for LMP
+      lmpEl.className = 'status-value mono';
+      if (gridRow.lmp_usd_per_mwh > 500) {
+        lmpEl.classList.add('critical');
+      } else if (gridRow.lmp_usd_per_mwh > 100) {
+        lmpEl.classList.add('warn');
+      }
+    }
+
+    // Feed & Headlines
     const weatherRow = state.currentData;
     if (gridRow) {
       const newTweets = generateTweets(gridRow, weatherRow, state.selectedISO);
