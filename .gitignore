@@ -1,11 +1,12 @@
 # Development files (not needed for GitHub Pages)
 scripts/
-AGENTS.md
-DATA_FORMAT.md
-docs/
+docs/superpowers/
 
 # Combined CSV (dashboard uses per-ISO files only)
 data/weather_by_iso.csv
+
+# Superpowers brainstorm sessions
+.superpowers/
 
 # OS files
 .DS_Store
@@ -18,3 +19,7 @@ desktop.ini
 *~
 .vscode/
 .idea/
+
+# Python
+__pycache__/
+*.pyc
